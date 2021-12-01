@@ -43,3 +43,25 @@ func TestUnpackInvalidString(t *testing.T) {
 		})
 	}
 }
+
+func TestWhithOtherSymbol(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{input: "#4bc2d5e", expected: "####bccddddde"},
+		{input: "_bcc_", expected: "_bcc_"},
+		{input: "_$!&%", expected: "_$!&%"},
+		{input: "_$2!&2%", expected: "_$$!&&%"},
+		{input: "🔥🧯2🌶🌭2", expected: "🔥🧯🧯🌶🌭🌭"},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.input, func(t *testing.T) {
+			result, err := Unpack(tc.input)
+			require.NoError(t, err)
+			require.Equal(t, tc.expected, result)
+		})
+	}
+}
