@@ -13,7 +13,7 @@ func Unpack(str string) (string, error) {
 	var (
 		result      strings.Builder
 		prevChar    rune
-		lastStrIndx int = len(str) - 1
+		lastStrIndx = len(str) - 1
 	)
 
 	for i, char := range str {
@@ -29,7 +29,6 @@ func Unpack(str string) (string, error) {
 			}
 
 			result.WriteString(strings.Repeat(string(prevChar), howMuchRepeat))
-
 		} else if !isFirstIteration && !unicode.IsDigit(prevChar) && !unicode.IsDigit(char) {
 			result.WriteString(string(prevChar))
 		}
