@@ -11,9 +11,8 @@ var ErrInvalidString = errors.New("invalid string")
 
 func Unpack(str string) (string, error) {
 	var (
-		result      strings.Builder
-		prevChar    rune
-		lastStrIndx = len(str) - 1
+		result   strings.Builder
+		prevChar rune
 	)
 
 	for i, char := range str {
@@ -34,8 +33,8 @@ func Unpack(str string) (string, error) {
 		}
 
 		prevChar = char
-
-		if lastStrIndx == i && !unicode.IsDigit(char) {
+		isLastStrIndex := len(str)-len(string(char)) == i
+		if isLastStrIndex && !unicode.IsDigit(char) {
 			result.WriteString(string(char))
 		}
 	}
