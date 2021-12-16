@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-const COUNT_TOP int = 10
+const count_top int = 10
 
 type Pair struct {
 	World string
@@ -20,11 +20,11 @@ func Top10(text string) (r []string) {
 	allWords := countAllWordsInText(text)
 	srtWords := sortByValuesAndLexicographically(allWords)
 
-	top := make([]Pair, COUNT_TOP)
-	if len(srtWords) < COUNT_TOP {
-		top = srtWords[:]
+	top := make([]Pair, count_top)
+	if len(srtWords) < count_top {
+		top = srtWords
 	} else {
-		top = srtWords[:COUNT_TOP]
+		top = srtWords[:count_top]
 	}
 
 	resultTop := make([]string, 0)
