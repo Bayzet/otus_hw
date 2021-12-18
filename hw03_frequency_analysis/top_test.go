@@ -43,6 +43,8 @@ var text = `Как видите, он  спускается  по  лестни�
 	посидеть у огня и послушать какую-нибудь интересную сказку.
 		В этот вечер...`
 
+var textTwo = `Lorem Lorem ipsum dolor sit amet, consectetur adipiscing elit`
+
 func TestTop10(t *testing.T) {
 	t.Run("no words in empty string", func(t *testing.T) {
 		require.Len(t, Top10(""), 0)
@@ -78,5 +80,19 @@ func TestTop10(t *testing.T) {
 			}
 			require.Equal(t, expected, Top10(text))
 		}
+	})
+
+	t.Run("positive test for less words", func(t *testing.T) {
+		expected := []string{
+			"Lorem",       // 2
+			"adipiscing",  // 1
+			"amet,",       // 1
+			"consectetur", // 1
+			"dolor",       // 1
+			"elit",        // 1
+			"ipsum",       // 1
+			"sit",         // 1
+		}
+		require.Equal(t, expected, Top10(textTwo))
 	})
 }
