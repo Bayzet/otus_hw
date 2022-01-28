@@ -73,4 +73,43 @@ func TestList(t *testing.T) {
 		require.Equal(t, 10, l.Front().Value)
 		require.Equal(t, 40, l.Front().Next.Value)
 	})
+
+	t.Run("only pushFront", func(t *testing.T) {
+		l := NewList()
+
+		l.PushFront(10) // [10]
+		require.Equal(t, 10, l.Front().Value)
+		require.Equal(t, 10, l.Back().Value)
+		require.Nil(t, l.Back().Next)
+		require.Nil(t, l.Back().Prev)
+		require.Nil(t, l.Front().Next)
+		require.Nil(t, l.Front().Prev)
+
+		l.PushFront(40) // [40, 10]
+		require.Equal(t, 2, l.Len())
+		require.Equal(t, 40, l.Front().Value)
+		require.Equal(t, 10, l.Back().Value)
+		require.Equal(t, 10, l.Front().Next.Value)
+		require.Nil(t, l.Front().Prev)
+		require.Nil(t, l.Back().Next)
+		require.Equal(t, 10, l.Front().Next.Value)
+
+		l.MoveToFront(l.Front()) // [40, 10]
+		require.Equal(t, 2, l.Len())
+		require.Equal(t, 40, l.Front().Value)
+		require.Equal(t, 10, l.Back().Value)
+		require.Equal(t, 10, l.Front().Next.Value)
+		require.Nil(t, l.Front().Prev)
+		require.Nil(t, l.Back().Next)
+		require.Equal(t, 10, l.Front().Next.Value)
+
+		l.MoveToFront(l.Back()) // [10, 40]
+		require.Equal(t, 2, l.Len())
+		require.Equal(t, 10, l.Front().Value)
+		require.Equal(t, 40, l.Back().Value)
+		require.Equal(t, 40, l.Front().Next.Value)
+		require.Nil(t, l.Front().Prev)
+		require.Nil(t, l.Back().Next)
+
+	})
 }

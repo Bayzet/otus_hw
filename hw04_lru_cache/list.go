@@ -1,9 +1,5 @@
 package hw04lrucache
 
-import (
-	"github.com/google/uuid"
-)
-
 type List interface {
 	Len() int
 	Front() *ListItem
@@ -16,25 +12,23 @@ type List interface {
 
 type ListItem struct {
 	Value interface{}
-	key   uuid.UUID
 	Next  *ListItem
 	Prev  *ListItem
 }
 
 type list struct {
-	items map[uuid.UUID]*ListItem
+	len   int
 	front *ListItem
 	back  *ListItem
 }
 
 func NewList() List {
 	l := new(list)
-	l.items = make(map[uuid.UUID]*ListItem)
 	return l
 }
 
 func (l *list) Len() int {
-	return len(l.items)
+	return l.len
 }
 
 func (l *list) Front() *ListItem {
@@ -45,29 +39,19 @@ func (l *list) Back() *ListItem {
 	return l.back
 }
 
-func (l *list) push(v interface{}) *ListItem {
-	li := ListItem{
-		Value: v,
-		key:   uuid.New(),
-	}
-
-	if l.Len() == 0 {
-		l.front = &li
-		l.back = &li
-	}
-
-	l.items[li.key] = &li
-
-	return &li
-}
-
 func (l *list) PushFront(v interface{}) *ListItem {
-	li := l.push(v)
+	li := new(ListItem)
+	li.Value = v
 
-	if l.Front() != li {
-		l.Front().Prev = li
-		li.Next = l.Front()
+	if l.len == 0 {
+		l.front = li
+		l.back = li
+	} else {
+		li.Next = l.front
+		l.front.Prev = li
 	}
+
+	l.len++
 
 	l.front = li
 
@@ -75,12 +59,18 @@ func (l *list) PushFront(v interface{}) *ListItem {
 }
 
 func (l *list) PushBack(v interface{}) *ListItem {
-	li := l.push(v)
+	li := new(ListItem)
+	li.Value = v
 
-	if l.Back() != li {
-		l.Back().Next = li
-		li.Prev = l.Back()
+	if l.len == 0 {
+		l.front = li
+		l.back = li
+	} else {
+		li.Prev = l.back
+		l.back.Next = li
 	}
+
+	l.len++
 
 	l.back = li
 
@@ -88,6 +78,24 @@ func (l *list) PushBack(v interface{}) *ListItem {
 }
 
 func (l *list) Remove(i *ListItem) {
+	if i.Prev == nil {
+		i.Next.Prev = nil
+		l.front = i.Next
+	} else {
+		i.Prev.Next = i.Next
+	}
+
+	if i.Next == nil {
+		i.Prev.Next = nil
+		l.back = i.Prev
+	} else {
+		i.Next.Prev = i.Prev
+	}
+
+	l.len--
+}
+
+func (l *list) MoveToFront(i *ListItem) {
 	if l.Front() != i {
 		i.Prev.Next = i.Next
 	} else {
@@ -100,19 +108,17 @@ func (l *list) Remove(i *ListItem) {
 		l.back = i.Prev
 	}
 
-	delete(l.items, i.key)
+	l.front.Prev = i
+	i.Next = l.front
+	i.Prev = nil
+	l.front = i
 }
 
-func (l *list) MoveToFront(i *ListItem) {
-	if l.Front() != i {	
-		if l.Back() != i {
-			i.Next.Prev = i.Prev
-		} else {
-			l.back = i.Prev
-		}
-
-		i.Prev.Next = i.Next
-		i.Next = l.Front()
-		l.front = i
+func debug(l List) []int {
+	elems := make([]int, 0, l.Len())
+	for i := l.Front(); i != nil; i = i.Next {
+		elems = append(elems, i.Value.(int))
 	}
+
+	return elems
 }
