@@ -27,7 +27,7 @@ func NewCache(capacity int) Cache {
 	}
 }
 
-func (lru *lruCache) Set(key Key, value interface{}) bool {	
+func (lru *lruCache) Set(key Key, value interface{}) bool {
 	listItem, ok := lru.items[key]
 	if ok {
 		item := listItem.Value.(cacheItem)
@@ -48,10 +48,10 @@ func (lru *lruCache) Set(key Key, value interface{}) bool {
 	return ok
 }
 
-func (lru *lruCache) Get(key Key) (interface{}, bool) {	
+func (lru *lruCache) Get(key Key) (interface{}, bool) {
 	if listItem, ok := lru.items[key]; ok {
 		lru.queue.MoveToFront(listItem)
-		item := listItem.Value.(cacheItem) 
+		item := listItem.Value.(cacheItem)
 
 		return item.value, true
 	} else {
