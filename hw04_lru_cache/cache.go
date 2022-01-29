@@ -1,7 +1,5 @@
 package hw04lrucache
 
-import "fmt"
-
 type Key string
 
 type Cache interface {
@@ -29,55 +27,27 @@ func NewCache(capacity int) Cache {
 	}
 }
 
-func (lru *lruCache) Set(key Key, value interface{}) bool {
-	fmt.Println("=== Set START")
-	fmt.Println("=== === key, value ", key, value)
-	fmt.Println("=== === lru.items", lru.items)
-	fmt.Println("=== === lru.queue", debug(lru.queue))
-	fmt.Println("=== === lru.queue.front", lru.queue.Front())
-	fmt.Println("=== === lru.queue.back", lru.queue.Back())
-	
+func (lru *lruCache) Set(key Key, value interface{}) bool {	
 	lruItem, ok := lru.items[key]
 	if ok {
 		lruItem.Value = value
 		lru.queue.MoveToFront(lruItem)
 	} else {
-		fmt.Println("=== === lru",lru)
 		if lru.capacity == lru.queue.Len() {
+			delete(lru.items, lru.queue.Back().key)
 			lru.queue.Remove(lru.queue.Back())
-			delete(lru.items, key)
-			fmt.Println("=== === delete key lru.items",key, lru.items)
 		}
 		lruItem := lru.queue.PushFront(value)
+		lruItem.key = key
 		lru.items[key] = lruItem
 	}
-
-	fmt.Println("=== === lru.items", lru.items)
-	fmt.Println("=== === lru.queue", debug(lru.queue))
-	fmt.Println("=== === lru.queue.front", lru.queue.Front())
-	fmt.Println("=== === lru.queue.back", lru.queue.Back())
-	fmt.Println("Set END")
 
 	return ok
 }
 
-func (lru *lruCache) Get(key Key) (interface{}, bool) {
-	fmt.Println("=== Get START")
-	fmt.Println("=== === key ", key)
-	fmt.Println("=== === lru.items", lru.items)
-	fmt.Println("=== === lru.queue", debug(lru.queue))
-	fmt.Println("=== === lru.queue.front", lru.queue.Front())
-	fmt.Println("=== === lru.queue.back", lru.queue.Back())
-	
+func (lru *lruCache) Get(key Key) (interface{}, bool) {	
 	if lruItem, ok := lru.items[key]; ok {
-		fmt.Println("=== === lruItem", lruItem)
 		lru.queue.MoveToFront(lruItem)
-
-		fmt.Println("=== === lru.items", lru.items)
-		fmt.Println("=== === lru.queue", debug(lru.queue))
-		fmt.Println("=== === lru.queue.front", lru.queue.Front())
-		fmt.Println("=== === lru.queue.back", lru.queue.Back())
-		fmt.Println("=== Get END")
 
 		return lruItem.Value, true
 	} else {
