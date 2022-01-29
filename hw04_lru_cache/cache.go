@@ -36,11 +36,13 @@ func (lru *lruCache) Set(key Key, value interface{}) bool {
 		lru.queue.MoveToFront(listItem)
 	} else {
 		item := cacheItem{key, value}
+
 		if lru.capacity == lru.queue.Len() {
 			lastItem := lru.queue.Back().Value
 			delete(lru.items, lastItem.(cacheItem).key)
 			lru.queue.Remove(lru.queue.Back())
 		}
+
 		listItem := lru.queue.PushFront(item)
 		lru.items[key] = listItem
 	}
@@ -52,11 +54,10 @@ func (lru *lruCache) Get(key Key) (interface{}, bool) {
 	if listItem, ok := lru.items[key]; ok {
 		lru.queue.MoveToFront(listItem)
 		item := listItem.Value.(cacheItem)
-
 		return item.value, true
-	} else {
-		return nil, false
 	}
+
+	return nil, false
 }
 
 func (lru *lruCache) Clear() {
