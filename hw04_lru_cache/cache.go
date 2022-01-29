@@ -38,12 +38,12 @@ func (lru *lruCache) Set(key Key, value interface{}) bool {
 		item := cacheItem{key, value}
 
 		if lru.capacity == lru.queue.Len() {
-			lastItem := lru.queue.Back().Value
-			delete(lru.items, lastItem.(cacheItem).key)
+			item := lru.queue.Back().Value
+			delete(lru.items, item.(cacheItem).key)
 			lru.queue.Remove(lru.queue.Back())
 		}
 
-		listItem := lru.queue.PushFront(item)
+		listItem = lru.queue.PushFront(item)
 		lru.items[key] = listItem
 	}
 
