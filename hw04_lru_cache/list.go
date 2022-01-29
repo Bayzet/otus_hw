@@ -12,7 +12,6 @@ type List interface {
 
 type ListItem struct {
 	Value interface{}
-	key 	Key
 	Next  *ListItem
 	Prev  *ListItem
 }
@@ -113,13 +112,4 @@ func (l *list) MoveToFront(i *ListItem) {
 	i.Next = l.front
 	i.Prev = nil
 	l.front = i
-}
-
-func debug(l List) []int {
-	elems := make([]int, 0, l.Len())
-	for i := l.Front(); i != nil; i = i.Next {
-		elems = append(elems, i.Value.(int))
-	}
-
-	return elems
 }

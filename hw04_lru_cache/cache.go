@@ -28,28 +28,32 @@ func NewCache(capacity int) Cache {
 }
 
 func (lru *lruCache) Set(key Key, value interface{}) bool {	
-	lruItem, ok := lru.items[key]
+	listItem, ok := lru.items[key]
 	if ok {
-		lruItem.Value = value
-		lru.queue.MoveToFront(lruItem)
+		item := listItem.Value.(cacheItem)
+		item.value = value
+		listItem.Value = item
+		lru.queue.MoveToFront(listItem)
 	} else {
+		item := cacheItem{key, value}
 		if lru.capacity == lru.queue.Len() {
-			delete(lru.items, lru.queue.Back().key)
+			lastItem := lru.queue.Back().Value
+			delete(lru.items, lastItem.(cacheItem).key)
 			lru.queue.Remove(lru.queue.Back())
 		}
-		lruItem := lru.queue.PushFront(value)
-		lruItem.key = key
-		lru.items[key] = lruItem
+		listItem := lru.queue.PushFront(item)
+		lru.items[key] = listItem
 	}
 
 	return ok
 }
 
 func (lru *lruCache) Get(key Key) (interface{}, bool) {	
-	if lruItem, ok := lru.items[key]; ok {
-		lru.queue.MoveToFront(lruItem)
+	if listItem, ok := lru.items[key]; ok {
+		lru.queue.MoveToFront(listItem)
+		item := listItem.Value.(cacheItem) 
 
-		return lruItem.Value, true
+		return item.value, true
 	} else {
 		return nil, false
 	}
