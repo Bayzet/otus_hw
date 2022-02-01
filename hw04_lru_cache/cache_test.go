@@ -70,13 +70,13 @@ func TestCache(t *testing.T) {
 
 		c.Clear()
 
-		val, ok = c.Get("aaa")
+		_, ok = c.Get("aaa")
 		require.False(t, ok)
 
-		val, ok = c.Get("bbb")
+		_, ok = c.Get("bbb")
 		require.False(t, ok)
 
-		val, ok = c.Get("ccc")
+		_, ok = c.Get("ccc")
 		require.False(t, ok)
 	})
 
