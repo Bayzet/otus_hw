@@ -8,7 +8,7 @@ import (
 
 var (
 	ErrErrorsLimitExceeded = errors.New("errors limit exceeded")
-	ErrErrorsNoGoroutines = errors.New("not goroutines")
+	ErrErrorsNoGoroutines  = errors.New("not goroutines")
 )
 
 type Task func() error
