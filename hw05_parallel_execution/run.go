@@ -8,7 +8,7 @@ import (
 
 var (
 	ErrErrorsLimitExceeded = errors.New("errors limit exceeded")
-	ErrErrorsNoGoroutines  = errors.New("not goroutines")
+	ErrErrorsNoGoroutines  = errors.New("not goroutines for work")
 )
 
 type Task func() error
@@ -27,8 +27,8 @@ func Run(tasks []Task, n, m int) error {
 	var errCount int32
 	wg := sync.WaitGroup{}
 
+	wg.Add(n)
 	for i := 0; i < n; i++ {
-		wg.Add(1)
 		go func() {
 			defer wg.Done()
 
@@ -43,13 +43,16 @@ func Run(tasks []Task, n, m int) error {
 
 	for _, task := range tasks {
 		if atomic.LoadInt32(&errCount) >= int32(m) {
-			close(tasksChan)
-			return ErrErrorsLimitExceeded
+			break
 		}
 		tasksChan <- task
 	}
 	close(tasksChan)
 	wg.Wait()
+
+	if errCount >= int32(m) {
+		return ErrErrorsLimitExceeded
+	}
 
 	return nil
 }
