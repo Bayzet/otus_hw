@@ -11,6 +11,10 @@ type Stage func(in In) (out Out)
 func ExecutePipeline(in In, done In, stages ...Stage) Out {
 	out := in
 
+	if len(stages) == 1 && stages[0] == nil {
+		return out
+	}
+
 	doneStage := func(in In) Out {
 		out := make(Bi)
 		go func() {
