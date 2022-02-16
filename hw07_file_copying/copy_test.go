@@ -9,7 +9,6 @@ import (
 )
 
 func TestCopy(t *testing.T) {
-
 	fromPath := "testdata/input.txt"
 	toPath := "out.txt"
 	t.Run("limit be negative", func(t *testing.T) {
@@ -18,7 +17,7 @@ func TestCopy(t *testing.T) {
 	})
 
 	t.Run("unsupported file", func(t *testing.T) {
-		err := Copy("/dev/urandom", toPath, 0, 0)
+		err := Copy("/dev/null", toPath, 0, 0)
 		require.Truef(t, errors.Is(err, ErrUnsupportedFile), "actual err - %v", err)
 	})
 

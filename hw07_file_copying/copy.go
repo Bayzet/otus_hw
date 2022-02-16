@@ -24,12 +24,12 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	fwriter := io.Writer(fileTo)
 
 	fileFrom, err := os.Open(fromPath)
-	defer fileFrom.Close()
 	if err != nil {
 		return err
 	}
+	defer fileFrom.Close()
 
-	fStat, err := fileFrom.Stat()
+	fStat, _ := fileFrom.Stat()
 	if !fStat.Mode().IsRegular() {
 		return ErrUnsupportedFile
 	}
@@ -49,7 +49,7 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	}
 
 	if _, err := io.CopyN(fwriter, barReader, limit); err != nil {
-		if err != io.EOF {
+		if errors.Is(err, io.EOF) {
 			return err
 		}
 	}
