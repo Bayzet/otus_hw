@@ -19,10 +19,6 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 		return ErrLimitCannotBeNegative
 	}
 
-	fileTo, _ := os.Create(toPath)
-	defer fileTo.Close()
-	fwriter := io.Writer(fileTo)
-
 	fileFrom, err := os.Open(fromPath)
 	if err != nil {
 		return err
@@ -47,6 +43,10 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	if limit == 0 {
 		limit = fStat.Size()
 	}
+
+	fileTo, _ := os.Create(toPath)
+	defer fileTo.Close()
+	fwriter := io.Writer(fileTo)
 
 	if _, err := io.CopyN(fwriter, barReader, limit); err != nil {
 		if errors.Is(err, io.EOF) {
