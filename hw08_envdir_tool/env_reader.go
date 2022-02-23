@@ -3,6 +3,8 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"errors"
+	"io"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -30,22 +32,28 @@ func ReadDir(dir string) (Environment, error) {
 	for _, fInfo := range filesInfo {
 		filePath := dir + "/" + fInfo.Name()
 		envValue := EnvValue{}
+
 		if fInfo.Size() == 0 {
 			envValue.NeedRemove = true
 		} else {
 			fRead, err := os.Open(filePath)
+
 			if err != nil {
 				return nil, err
 			}
 			defer fRead.Close()
 
 			buf := bufio.NewReader(fRead)
-			firstLine, _, _ := buf.ReadLine()
+			firstLine, err := buf.ReadBytes('\n')
+			
+			if err != nil {
+				if !errors.Is(err, io.EOF) {
+					return nil, err
+				}
+			}
 
-			// allStr, err := ioutil.ReadAll(fRead)
 			replaced := bytes.Replace(firstLine, []byte{0}, []byte("\n"), -1)
-			// splited := strings.Split(string(replaced), "\n")
-			envValue.Value = strings.TrimRight(string(replaced), " \t")
+			envValue.Value = strings.TrimRight(string(replaced), " \t\n")
 		}
 
 		envs[fInfo.Name()] = envValue
