@@ -50,7 +50,7 @@ func ReadDir(dir string) (Environment, error) {
 				}
 			}
 
-			replaced := bytes.Replace(firstLine, []byte{0}, []byte("\n"), -1)
+			replaced := bytes.ReplaceAll(firstLine, []byte{0}, []byte("\n"))
 			envValue.Value = strings.TrimRight(string(replaced), " \t\n")
 		}
 

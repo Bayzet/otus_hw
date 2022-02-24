@@ -23,5 +23,4 @@ func main() {
 	exitCode := RunCmd(cmd, envs)
 
 	os.Exit(exitCode)
-
 }
