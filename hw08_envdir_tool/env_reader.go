@@ -37,7 +37,6 @@ func ReadDir(dir string) (Environment, error) {
 			envValue.NeedRemove = true
 		} else {
 			fRead, err := os.Open(filePath)
-
 			if err != nil {
 				return nil, err
 			}
@@ -45,7 +44,6 @@ func ReadDir(dir string) (Environment, error) {
 
 			buf := bufio.NewReader(fRead)
 			firstLine, err := buf.ReadBytes('\n')
-			
 			if err != nil {
 				if !errors.Is(err, io.EOF) {
 					return nil, err

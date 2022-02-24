@@ -1,7 +1,6 @@
 package main
 
 import (
-	// "fmt"
 	"os"
 	"os/exec"
 )
@@ -27,9 +26,8 @@ func RunCmd(cmd []string, env Environment) (returnCode int) {
 		os.Setenv(k, e.Value)
 	}
 
-	if err := cmdExec.Run(); err != nil {
-		returnCode = -1
-	}
+	_ = cmdExec.Run()
+	returnCode = cmdExec.ProcessState.ExitCode()
 
 	return
 }

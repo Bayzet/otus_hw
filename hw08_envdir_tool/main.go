@@ -2,7 +2,8 @@ package main
 
 import (
 	"flag"
-	"fmt"
+	"log"
+	"os"
 )
 
 // import flag "github.com/spf13/pflag"
@@ -16,8 +17,11 @@ func main() {
 
 	envs, err := ReadDir(envDir)
 	if err != nil {
-		fmt.Println("Error: ", err)
+		log.Fatal(err)
 	}
 
-	RunCmd(cmd, envs)
+	exitCode := RunCmd(cmd, envs)
+
+	os.Exit(exitCode)
+
 }
