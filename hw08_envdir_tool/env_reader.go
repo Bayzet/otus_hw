@@ -21,8 +21,7 @@ type EnvValue struct {
 // ReadDir reads a specified directory and returns map of env variables.
 // Variables represented as files where filename is name of variable, file first line is a value.
 func ReadDir(dir string) (Environment, error) {
-	var envs Environment
-	envs = make(map[string]EnvValue)
+	var envs Environment = make(map[string]EnvValue)
 
 	filesInfo, err := ioutil.ReadDir(dir)
 	if err != nil {
@@ -30,31 +29,31 @@ func ReadDir(dir string) (Environment, error) {
 	}
 
 	for _, fInfo := range filesInfo {
-		filePath := dir + "/" + fInfo.Name()
-		envValue := EnvValue{}
-
 		if fInfo.Size() == 0 {
-			envValue.NeedRemove = true
-		} else {
-			fRead, err := os.Open(filePath)
-			if err != nil {
-				return nil, err
-			}
-			defer fRead.Close()
-
-			buf := bufio.NewReader(fRead)
-			firstLine, err := buf.ReadBytes('\n')
-			if err != nil {
-				if !errors.Is(err, io.EOF) {
-					return nil, err
-				}
-			}
-
-			replaced := bytes.ReplaceAll(firstLine, []byte{0}, []byte("\n"))
-			envValue.Value = strings.TrimRight(string(replaced), " \t\n")
+			envs[fInfo.Name()] = EnvValue{NeedRemove: true}
+			continue
 		}
 
-		envs[fInfo.Name()] = envValue
+		filePath := dir + "/" + fInfo.Name()
+
+		fRead, err := os.Open(filePath)
+		if err != nil {
+			return nil, err
+		}
+		defer fRead.Close()
+
+		buf := bufio.NewReader(fRead)
+		firstLine, err := buf.ReadBytes('\n')
+		if err != nil {
+			if !errors.Is(err, io.EOF) {
+				return nil, err
+			}
+		}
+
+		replaced := bytes.ReplaceAll(firstLine, []byte{0}, []byte("\n"))
+		v := strings.TrimRight(string(replaced), " \t\n")
+
+		envs[fInfo.Name()] = EnvValue{Value: v}
 	}
 
 	return envs, nil
