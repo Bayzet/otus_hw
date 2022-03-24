@@ -1,3 +1,4 @@
+//nolint
 package hw09structvalidator
 
 import (
@@ -58,7 +59,7 @@ type (
 	}
 
 	Car struct {
-		Color  string   `validate:"regexp:^\\_$d++w+@\\w+\\.\\w+$"`
+		Color string `validate:"regexp:^\\_$d++w+@\\w+\\.\\w+$"`
 	}
 
 	Bus struct {
@@ -100,7 +101,6 @@ func TestValidateFailed(t *testing.T) {
 			require.ErrorAs(t, err, &vErr)
 
 			require.EqualError(t, vErr, tt.expectedErr.Error())
-
 		})
 	}
 }
@@ -122,10 +122,10 @@ func TestValidateFailedStruct(t *testing.T) {
 			require.Error(t, err)
 
 			require.EqualError(t, err, tt.expectedErr.Error())
-
 		})
 	}
 }
+
 func TestValidateSuccess(t *testing.T) {
 	tests := []struct {
 		in          interface{}
@@ -145,7 +145,6 @@ func TestValidateSuccess(t *testing.T) {
 
 			err := Validate(tt.in)
 			require.Nil(t, err)
-
 		})
 	}
 }

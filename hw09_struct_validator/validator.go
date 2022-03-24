@@ -11,13 +11,14 @@ import (
 )
 
 var (
-	ErrTagNotValid    = errors.New("Tag not valid")
-	ErrIsNotStruct    = errors.New("Interface not struct")
-	ErrLenNotInt      = errors.New("Rule len not int")
-	ErrMinNotInt      = errors.New("Rule min not int")
-	ErrMaxNotInt      = errors.New("Rule max not int")
-	ErrRegexpNotValid = errors.New("Regexp not valid")
-	ErrIntSlice       = errors.New("Is not integer slice")
+	ErrTagNotValid      = errors.New("Tag not valid")
+	ErrIsNotStruct      = errors.New("Interface not struct")
+	ErrLenNotInt        = errors.New("Rule len not int")
+	ErrMinNotInt        = errors.New("Rule min not int")
+	ErrMaxNotInt        = errors.New("Rule max not int")
+	ErrRegexpNotValid   = errors.New("Regexp not valid")
+	ErrIntSlice         = errors.New("Is not integer slice")
+	ErrTypeNotSupported = errors.New("Type not supported")
 
 	ErrorLenValidation      = errors.New("Field does not meet the condition len")
 	ErrorMinValidation      = errors.New("Field does not meet the condition min")
@@ -76,38 +77,40 @@ func Validate(v interface{}) error {
 		ferr := ValidationError{Field: f.Name}
 
 		tag := f.Tag.Get(listenTag)
-		if tag != "" {
-			tagsCondition, err := parseTagCondition(tag)
+		if tag == "" {
+			continue
+		}
+
+		tagsCondition, err := parseTagCondition(tag)
+		if err != nil {
+			ferr.Err = err
+			errs = append(errs, ferr)
+
+			continue
+		}
+
+		fv := vr.Field(i)
+
+		switch f.Type.Kind() { //nolint
+		case reflect.String:
+			err := stringValidator(fv.String(), tagsCondition)
 			if err != nil {
 				ferr.Err = err
-				errs = append(errs, ferr)
-
-				continue
 			}
-
-			fv := vr.Field(i)
-
-			switch f.Type.Kind() {
-			case reflect.String:
-				err := stringValidator(fv.String(), tagsCondition)
-				if err != nil {
-					ferr.Err = err
-				}
-			case reflect.Int:
-				err := intValidator(int(fv.Int()), tagsCondition)
-				if err != nil {
-					ferr.Err = err
-				}
-			case reflect.Slice:
-				err := sliceValidator(fv, tagsCondition)
-				if err != nil {
-					ferr.Err = err
-				}
+		case reflect.Int:
+			err := intValidator(int(fv.Int()), tagsCondition)
+			if err != nil {
+				ferr.Err = err
 			}
-
-			if ferr.Err != nil {
-				errs = append(errs, ferr)
+		case reflect.Slice:
+			err := sliceValidator(fv, tagsCondition)
+			if err != nil {
+				ferr.Err = err
 			}
+		}
+
+		if ferr.Err != nil {
+			errs = append(errs, ferr)
 		}
 	}
 
@@ -188,8 +191,7 @@ func lenValidator(v string, r int) error {
 }
 
 func regexpValidator(v string, r regexp.Regexp) error {
-	f := r.Find([]byte(v))
-	if f == nil {
+	if r.Find([]byte(v)) == nil {
 		return ErrorRegexpValidation
 	}
 
@@ -224,7 +226,6 @@ func intValidator(v int, c []Condition) (errs error) {
 		case "in":
 			r := []int{}
 			for _, s := range strings.Split(rule.Value.(string), ",") {
-
 				i, err := strconv.ParseInt(s, 10, 64)
 				if err != nil {
 					return ErrIntSlice
@@ -271,7 +272,7 @@ func maxValidator(v int, r int) error {
 
 func sliceValidator(v reflect.Value, c []Condition) error {
 	for i := 0; i < v.Len(); i++ {
-		switch v.Index(i).Kind() {
+		switch v.Index(i).Kind() { //nolint
 		case reflect.String:
 			err := stringValidator(v.Index(i).String(), c)
 			if err != nil {
