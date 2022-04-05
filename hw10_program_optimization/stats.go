@@ -1,14 +1,14 @@
 package hw10programoptimization
 
 import (
-	"encoding/json"
+	"bufio"
+	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"regexp"
 	"strings"
 )
 
+//easyjson:json
 type User struct {
 	ID       int
 	Name     string
@@ -32,31 +32,32 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 type users [100_000]User
 
 func getUsers(r io.Reader) (result users, err error) {
-	content, err := ioutil.ReadAll(r)
-	if err != nil {
-		return
-	}
+	var line []byte
+	br := bufio.NewReader(r)
 
-	lines := strings.Split(string(content), "\n")
-	for i, line := range lines {
+	for i := 0; ; i++ {
+		line, _, err = br.ReadLine()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				err = nil
+			}
+
+			return
+		}
+
 		var user User
-		if err = json.Unmarshal([]byte(line), &user); err != nil {
+		if err = user.UnmarshalJSON(line); err != nil {
 			return
 		}
 		result[i] = user
 	}
-	return
 }
 
 func countDomains(u users, domain string) (DomainStat, error) {
 	result := make(DomainStat)
 
 	for _, user := range u {
-		matched, err := regexp.Match("\\."+domain, []byte(user.Email))
-		if err != nil {
-			return nil, err
-		}
-
+		matched := strings.HasSuffix(user.Email, "."+domain)
 		if matched {
 			num := result[strings.ToLower(strings.SplitN(user.Email, "@", 2)[1])]
 			num++
