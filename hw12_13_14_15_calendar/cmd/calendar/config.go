@@ -1,7 +1,9 @@
 package main
 
 type Config struct {
-	Logger LoggerConf `yaml:"logger"`
+	Logger  LoggerConf  `yaml:"logger"`
+	Storage StorageConf `yaml:"storage"`
+	Http    HttpConfig  `yaml:"http"`
 }
 
 type LoggerConf struct {
@@ -9,6 +11,13 @@ type LoggerConf struct {
 	File  string `yaml:"file"`
 }
 
-func NewConfig() Config {
-	return Config{}
+type StorageConf struct {
+	Type   string `yaml:"type"`
+	Driver string `yaml:"driver"`
+	DSN    string `yaml:"dsn"`
+}
+
+type HttpConfig struct {
+	Host string `yaml:"host"`
+	Port string `yaml:"port"`
 }

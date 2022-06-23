@@ -1,20 +1,21 @@
-package memorystorage
+package sqlstorage
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
-	"math/rand"
-	"sync"
+	"log"
 	"testing"
 	"time"
 
 	"github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/storage"
 	"github.com/google/uuid"
-
 	"github.com/stretchr/testify/require"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
-var events = []storage.Event{
+var eventsFixture = []storage.Event{
 	{ID: uuid.New(), Title: "event 1", Date: time.Date(2022, 5, 30, 1, 0, 0, 0, time.UTC), User: 1},
 	{ID: uuid.New(), Title: "event 1.1", Date: time.Date(2022, 5, 30, 1, 1, 0, 0, time.UTC), User: 1},
 	{ID: uuid.New(), Title: "event 2", Date: time.Date(2022, 5, 31, 1, 1, 0, 0, time.UTC), User: 1},
@@ -28,143 +29,142 @@ var events = []storage.Event{
 	{ID: uuid.New(), Title: "event 10", Date: time.Date(2022, 6, 8, 1, 0, 0, 0, time.UTC), User: 1},
 }
 
+func initDB() *sql.DB {
+	db, err := sql.Open("mysql", "root:YLmcjlpD3b96Bi08KPrf@tcp(localhost:3306)/calendar")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = db.PingContext(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = db.Exec("truncate table events")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = db.Exec("truncate table users")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	stmt, err := db.Prepare("INSERT INTO events(`id`, `title`, `date`, user_id) values(?, ?, ?, ?)")
+	defer stmt.Close()
+
+	for _, e := range eventsFixture {
+		_, err := stmt.Exec(e.ID, e.Title, e.Date, e.User)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	return db
+}
+
 func TestStorage_CreateEvent(t *testing.T) {
-	s := New()
-
-	err := s.CreateEvent(context.Background(), &events[0])
-	require.NoError(t, err)
-	require.Equal(t, 1, s.countRows())
-
-	err = s.CreateEvent(context.Background(), &events[1])
-	require.NoError(t, err)
-	require.Equal(t, 2, s.countRows())
-}
-
-func TestStorage_CreateEvent_race(t *testing.T) {
-	s := New()
-
-	wg := &sync.WaitGroup{}
-	for i := 0; i < 10; i++ {
-		wg.Add(1)
-		go func(wg *sync.WaitGroup) {
-			defer wg.Done()
-			_ = s.CreateEvent(context.Background(), &events[0])
-		}(wg)
-	}
-	wg.Wait()
-}
-
-func TestStorage_FindEventById(t *testing.T) {
 	ctx := context.Background()
-	s := New()
-	for _, e := range events {
-		_ = s.CreateEvent(ctx, &e)
+
+	s := New(initDB())
+
+	event := storage.Event{
+		ID:    uuid.New(),
+		Title: "Test event 1",
+		Date:  time.Date(2022, 0o5, 10, 10, 0, 0, 0, time.UTC),
+		User:  1,
 	}
 
-	e := s.FindEventById(ctx, events[3].ID)
-	require.NotNil(t, e)
-	require.EqualValues(t, &events[3], e)
+	err := s.CreateEvent(ctx, &event)
+	require.NoError(t, err)
+
+	row := s.db.QueryRowContext(ctx, "SELECT id FROM events WHERE id = ?", event.ID)
+
+	var id uuid.UUID
+	_ = row.Scan(&id)
+	require.Equal(t, event.ID, id)
 }
 
-func TestStorage_UpdateEvent_success(t *testing.T) {
+func TestStorage_UpdateEvent(t *testing.T) {
 	ctx := context.Background()
-	s := New()
-	for _, e := range events {
-		_ = s.CreateEvent(ctx, &e)
-	}
 
-	updEvent := events[2]
+	s := New(initDB())
+
+	updEvent := eventsFixture[0]
 	updEvent.Title = "upd"
 
 	err := s.UpdateEvent(ctx, &updEvent)
 	require.NoError(t, err)
 
-	e := s.FindEventById(ctx, updEvent.ID)
-	require.NotNil(t, e)
-	require.EqualValues(t, &updEvent, e)
-}
+	row := s.db.QueryRowContext(ctx, "SELECT id, title FROM events WHERE id = ?", updEvent.ID)
+	var id uuid.UUID
+	var title string
 
-func TestStorage_UpdateEvent_race(t *testing.T) {
-	ctx := context.Background()
-	s := New()
-	for _, e := range events {
-		_ = s.CreateEvent(ctx, &e)
-	}
-
-	updEvent := events[2]
-	updEvent.Title = "upd"
-
-	wg := &sync.WaitGroup{}
-	for i := 0; i < 10; i++ {
-		wg.Add(1)
-		go func(wg *sync.WaitGroup) {
-			defer wg.Done()
-			time.Sleep(time.Millisecond * time.Duration(rand.Intn(100)))
-			err := s.UpdateEvent(ctx, &updEvent)
-			require.NoError(t, err)
-		}(wg)
-	}
-
-	wg.Wait()
-}
-
-func TestStorage_UpdateEvent_error(t *testing.T) {
-	ctx := context.Background()
-	s := New()
-	for _, e := range events {
-		_ = s.CreateEvent(ctx, &e)
-	}
-
-	updEvent := events[2]
-	updEvent.Title = "upd"
-
-	err := s.UpdateEvent(ctx, &updEvent)
-	require.NoError(t, err)
-
-	e := s.FindEventById(ctx, updEvent.ID)
-	require.NotNil(t, e)
-	require.EqualValues(t, &updEvent, e)
+	_ = row.Scan(&id, &title)
+	require.Equal(t, updEvent.ID, id)
+	require.Equal(t, updEvent.Title, title)
 }
 
 func TestStorage_DeleteEvent(t *testing.T) {
 	ctx := context.Background()
-	s := New()
-	for _, e := range events {
-		_ = s.CreateEvent(ctx, &e)
-	}
 
-	err := s.DeleteEvent(ctx, events[0].ID)
+	s := New(initDB())
+
+	err := s.DeleteEvent(ctx, &eventsFixture[0])
 	require.NoError(t, err)
 
-	e := s.FindEventById(ctx, events[0].ID)
-	require.Nil(t, e)
+	row := s.db.QueryRowContext(ctx, "SELECT id FROM events WHERE id = ?", eventsFixture[0].ID)
+	var id *uuid.UUID
+	_ = row.Scan(id)
+	require.Nil(t, id)
+}
 
-	require.Equal(t, 10, s.countRows())
+func TestStorage_FindEventById(t *testing.T) {
+	tests := []struct {
+		in  uuid.UUID
+		exp *storage.Event
+	}{
+		{
+			eventsFixture[2].ID,
+			&eventsFixture[2],
+		},
+		{
+			uuid.New(),
+			nil,
+		},
+	}
+
+	ctx := context.Background()
+
+	s := New(initDB())
+
+	for _, tt := range tests {
+		event := s.FindEventByID(ctx, tt.in)
+		require.EqualValues(t, tt.exp, event)
+	}
 }
 
 func TestStorage_ListEventsForDay(t *testing.T) {
+	ctx := context.Background()
+
+	s := New(initDB())
+
 	tests := []struct {
 		in  time.Time
 		exp []storage.Event
 	}{
 		{
 			in:  time.Date(2022, 5, 30, 1, 0, 0, 0, time.UTC),
-			exp: events[0:2],
+			exp: eventsFixture[0:2],
 		},
 		{
 			in:  time.Date(2022, 5, 31, 1, 0, 0, 0, time.UTC),
-			exp: []storage.Event{events[2]},
+			exp: []storage.Event{eventsFixture[2]},
 		},
 		{
 			in:  time.Date(2022, 5, 29, 1, 0, 0, 0, time.UTC),
 			exp: nil,
 		},
-	}
-
-	ctx := context.Background()
-	s := New()
-	for _, e := range events {
-		_ = s.CreateEvent(ctx, &e)
 	}
 
 	for i, tt := range tests {
@@ -177,6 +177,10 @@ func TestStorage_ListEventsForDay(t *testing.T) {
 }
 
 func TestStorage_ListEventsForWeek(t *testing.T) {
+	ctx := context.Background()
+
+	s := New(initDB())
+
 	tests := []struct {
 		in     time.Time
 		exp    []storage.Event
@@ -184,7 +188,7 @@ func TestStorage_ListEventsForWeek(t *testing.T) {
 	}{
 		{
 			in:     time.Date(2022, 5, 30, 1, 0, 0, 0, time.UTC),
-			exp:    events[0:8],
+			exp:    eventsFixture[0:8],
 			expErr: nil,
 		},
 		{
@@ -199,12 +203,6 @@ func TestStorage_ListEventsForWeek(t *testing.T) {
 		},
 	}
 
-	ctx := context.Background()
-	s := New()
-	for _, e := range events {
-		_ = s.CreateEvent(ctx, &e)
-	}
-
 	for i, tt := range tests {
 		t.Run(fmt.Sprintf("case: %v", i), func(t *testing.T) {
 			eventList, err := s.ListEventsForWeek(ctx, tt.in)
@@ -215,28 +213,26 @@ func TestStorage_ListEventsForWeek(t *testing.T) {
 }
 
 func TestStorage_ListEventsForMonth(t *testing.T) {
+	ctx := context.Background()
+
+	s := New(initDB())
+
 	tests := []struct {
 		in  time.Time
 		exp []storage.Event
 	}{
 		{
 			in:  time.Date(2022, 5, 30, 1, 0, 0, 0, time.UTC),
-			exp: events[0:3],
+			exp: eventsFixture[0:3],
 		},
 		{
 			in:  time.Date(2022, 6, 10, 1, 0, 0, 0, time.UTC),
-			exp: events[3:],
+			exp: eventsFixture[3:],
 		},
 		{
 			in:  time.Date(2022, 7, 10, 1, 0, 0, 0, time.UTC),
 			exp: nil,
 		},
-	}
-
-	ctx := context.Background()
-	s := New()
-	for _, e := range events {
-		_ = s.CreateEvent(ctx, &e)
 	}
 
 	for i, tt := range tests {

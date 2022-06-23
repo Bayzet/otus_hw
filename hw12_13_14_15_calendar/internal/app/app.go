@@ -10,10 +10,13 @@ import (
 )
 
 type App struct {
+	Logger  Logger
+	Storage Storage
 }
 
 type Logger interface {
 	Info(string)
+	Warn(string)
 	Error(string)
 	Debug(string)
 }
@@ -21,7 +24,7 @@ type Logger interface {
 type Storage interface {
 	CreateEvent(context.Context, *storage.Event) error
 	UpdateEvent(context.Context, *storage.Event) error
-	DeleteEvent(context.Context, int) error
+	DeleteEvent(context.Context, uuid.UUID) error
 	ListEventsForDay(context.Context, time.Time) ([]storage.Event, error)
 	ListEventsForWeek(context.Context, time.Time) ([]storage.Event, error)
 	ListEventsForMonth(context.Context, time.Time) ([]storage.Event, error)
@@ -29,7 +32,10 @@ type Storage interface {
 }
 
 func New(logger Logger, storage Storage) *App {
-	return &App{}
+	return &App{
+		Logger:  logger,
+		Storage: storage,
+	}
 }
 
 func (a *App) CreateEvent(ctx context.Context, id, title string) error {

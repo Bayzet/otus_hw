@@ -1,0 +1,7 @@
+logger:
+  level: "debug"
+  file: "log.txt"
+db:
+  mysql_dsn: root:123456@tcp(127.0.0.1:3306)/calendar
+storage:
+  type: memory|sql

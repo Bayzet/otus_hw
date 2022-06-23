@@ -1,0 +1,13 @@
+logger:
+  level: "debug"
+  file: "log.txt"
+
+
+storage:
+  type: memory
+  driver: mysql
+  dsn: root:YLmcjlpD3b96Bi08KPrf@tcp(127.0.0.1:3306)/calendar
+
+http:
+  host: localhost
+  port: 1111

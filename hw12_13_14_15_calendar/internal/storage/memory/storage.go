@@ -13,13 +13,14 @@ import (
 )
 
 type Storage struct {
+	mu     *sync.Mutex
 	events map[uuid.UUID]storage.Event
-	mu     sync.RWMutex
 }
 
 func New() *Storage {
 	return &Storage{
 		events: make(map[uuid.UUID]storage.Event),
+		mu:     &sync.Mutex{},
 	}
 }
 
@@ -28,14 +29,19 @@ func (s Storage) countRows() int {
 }
 
 func (s Storage) CreateEvent(ctx context.Context, e *storage.Event) error {
+	s.mu.Lock()
 	s.events[e.ID] = *e
+	s.mu.Unlock()
 
 	return nil
 }
 
 func (s Storage) UpdateEvent(ctx context.Context, e *storage.Event) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if _, ok := s.events[e.ID]; !ok {
-		return errors.Wrap(storage.ErrUpdate, fmt.Sprintf("Отсутствует событие с ключем %v", e.ID))
+		return errors.Wrap(storage.ErrEventNotFound, fmt.Sprintf("Ошибка обновления события %v", e.ID))
 	}
 
 	s.events[e.ID] = *e
@@ -45,7 +51,7 @@ func (s Storage) UpdateEvent(ctx context.Context, e *storage.Event) error {
 
 func (s Storage) DeleteEvent(ctx context.Context, id uuid.UUID) error {
 	if _, ok := s.events[id]; !ok {
-		return errors.Wrap(storage.ErrDelete, fmt.Sprintf("Отсутствует событие с ключем %v", id))
+		return errors.Wrap(storage.ErrEventNotFound, fmt.Sprintf("Ошибка удаления события %v", id))
 	}
 
 	delete(s.events, id)
@@ -78,7 +84,7 @@ func (s Storage) ListEventsForDay(ctx context.Context, t time.Time) ([]storage.E
 
 func (s Storage) ListEventsForWeek(ctx context.Context, t time.Time) ([]storage.Event, error) {
 	if t.Weekday() != time.Monday {
-		return nil, errors.Wrap(storage.ErrDayNotMonday, fmt.Sprintf("Номер переданного дня - %v", t.Weekday()))
+		return nil, errors.Wrap(storage.ErrDayNotMonday, fmt.Sprintf("Ошибка, переданный день - %v", t.Weekday()))
 	}
 
 	var events []storage.Event

@@ -5,7 +5,6 @@ import (
 )
 
 var (
-	ErrUpdate       = errors.New("Ошибка обновления события")
-	ErrDelete       = errors.New("Ошибка удаления события")
-	ErrDayNotMonday = errors.New("Ошибка, ожидается понедельник")
+	ErrEventNotFound = errors.New("событие не найдено")
+	ErrDayNotMonday  = errors.New("ожидается понедельник")
 )

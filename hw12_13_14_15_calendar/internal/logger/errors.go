@@ -3,6 +3,7 @@ package logger
 import (
 	"errors"
 	"fmt"
+
 	"github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/consts"
 )
 
@@ -13,4 +14,9 @@ var (
 			consts.LogLevelInfo,
 			consts.LogLevelError,
 			consts.LogLevelDebug))
+	ErrStorageTypeNotValid = errors.New(
+		fmt.Sprintf(
+			"Ошибка валидации. Поддерживаемые типы storage: %v, %v",
+			consts.StorageTypeMemory,
+			consts.StorageTypeSQL))
 )
