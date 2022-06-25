@@ -50,8 +50,13 @@ func initDB() *sql.DB {
 		log.Fatal(err)
 	}
 
-	stmt, err := db.Prepare("INSERT INTO events(`id`, `title`, `date`, user_id) values(?, ?, ?, ?)")
-	defer stmt.Close()
+	stmt, _ := db.Prepare("INSERT INTO events(`id`, `title`, `date`, user_id) values(?, ?, ?, ?)")
+	defer func(stmt *sql.Stmt) {
+		err := stmt.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}(stmt)
 
 	for _, e := range eventsFixture {
 		_, err := stmt.Exec(e.ID, e.Title, e.Date, e.User)

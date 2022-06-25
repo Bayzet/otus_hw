@@ -9,3 +9,8 @@ const (
 	StorageTypeMemory = "memory"
 	StorageTypeSQL    = "sql"
 )
+
+const (
+	StartRequestTime int = iota
+	ResponseStatusCode
+)

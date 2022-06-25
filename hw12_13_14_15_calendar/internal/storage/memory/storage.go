@@ -59,7 +59,7 @@ func (s Storage) DeleteEvent(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-func (s Storage) FindEventById(ctx context.Context, id uuid.UUID) *storage.Event {
+func (s Storage) FindEventByID(ctx context.Context, id uuid.UUID) *storage.Event {
 	e, ok := s.events[id]
 	if !ok {
 		return nil
@@ -93,7 +93,8 @@ func (s Storage) ListEventsForWeek(ctx context.Context, t time.Time) ([]storage.
 	lastDayOfWeek := firstDayOfWeek.Add(sevenDayHour)
 
 	for _, e := range s.events {
-		if e.Date == firstDayOfWeek || e.Date == lastDayOfWeek || (e.Date.After(firstDayOfWeek) && e.Date.Before(lastDayOfWeek)) {
+		if e.Date == firstDayOfWeek || e.Date == lastDayOfWeek ||
+			(e.Date.After(firstDayOfWeek) && e.Date.Before(lastDayOfWeek)) {
 			events = append(events, e)
 		}
 	}

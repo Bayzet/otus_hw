@@ -28,7 +28,7 @@ type Storage interface {
 	ListEventsForDay(context.Context, time.Time) ([]storage.Event, error)
 	ListEventsForWeek(context.Context, time.Time) ([]storage.Event, error)
 	ListEventsForMonth(context.Context, time.Time) ([]storage.Event, error)
-	FindEventById(ctx context.Context, uuid uuid.UUID) *storage.Event
+	FindEventByID(ctx context.Context, uuid uuid.UUID) *storage.Event
 }
 
 func New(logger Logger, storage Storage) *App {

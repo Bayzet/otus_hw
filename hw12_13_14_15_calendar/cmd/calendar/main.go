@@ -2,29 +2,20 @@ package main
 
 import (
 	"context"
-	"log"
-	"strings"
-	"time"
-
-	"github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/consts"
-
-	// "context"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"time"
 
-	"github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/logger"
-
-	// "os"
-	// "os/signal"
-	// "syscall"
-	// "time"
+	internalhttp "github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/server/http"
 
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v3"
-	// internalhttp "github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/server/http"
-	// memorystorage "github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/storage/memory"
+
+	"github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/consts"
+	"github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/logger"
 )
 
 var configFile string
@@ -42,31 +33,13 @@ func (st StorageType) Validate() error {
 }
 
 func init() {
-	pflag.StringVar(&configFile, "config", "/etc/calendar/config.toml", "Path to configuration file")
+	pflag.StringVar(&configFile, "config", "/calendar/config.yaml", "Path to configuration file")
 }
 
-func LoggingMiddleware(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	rTime := ctx.Value("start-request-time").(time.Time)
-	ip := strings.Split(r.RemoteAddr, ":")
-
-	msg := fmt.Sprintf("%v [%v] %v %v %v %v %v %v",
-		ip[0],
-		rTime.Format(time.RFC822Z),
-		r.Method,
-		r.RequestURI,
-		r.Proto,
-		r.Context().Value("response-status-code"),
-		time.Since(rTime),
-		r.Header.Get("User-Agent"),
-	)
-	Logger.Info(msg)
-}
-
-func HelloWorld(h http.HandlerFunc) http.HandlerFunc {
+func helloWorld(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := context.WithValue(r.Context(), "start-request-time", time.Now())
-		ctx = context.WithValue(ctx, "response-status-code", http.StatusOK)
+		ctx := context.WithValue(r.Context(), consts.StartRequestTime, time.Now())
+		ctx = context.WithValue(ctx, consts.ResponseStatusCode, http.StatusOK)
 
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("hello world"))
@@ -89,13 +62,13 @@ func main() {
 
 	b, err := ioutil.ReadFile(configFile)
 	if err != nil {
-		fmt.Printf("Ошибка чтения файла: %w", err)
+		fmt.Printf("Ошибка чтения файла: %v", err.Error())
 		return
 	}
 
 	err = yaml.Unmarshal(b, &config)
 	if err != nil {
-		fmt.Printf("Ошибка маршелинга: %w", err)
+		fmt.Printf("Ошибка маршелинга: %v", err.Error())
 		return
 	}
 
@@ -105,36 +78,28 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", HelloWorld(LoggingMiddleware))
+	mux.HandleFunc("/", helloWorld(internalhttp.LoggingMiddleware(Logger)))
 
-	log.Println("Запуск веб-сервера на " + fmt.Sprintf("%v:%v", config.Http.Host, config.Http.Port))
-	err = http.ListenAndServe(fmt.Sprintf("%v:%v", config.Http.Host, config.Http.Port), mux)
-	log.Fatal(err)
-	//storage := memorystorage.New()
-	//calendar := app.New(logg, storage)
+	addr := fmt.Sprintf("%v:%v", config.HTTP.Host, config.HTTP.Port)
 
-	// server := internalhttp.NewServer(logg, calendar)
+	server := internalhttp.NewServer(addr, mux)
 
-	// ctx, cancel := signal.NotifyContext(context.Background(),
-	// 	syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	// defer cancel()
+	ctx := context.Background()
+	go func() {
+		<-ctx.Done()
 
-	// go func() {
-	// 	<-ctx.Done()
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+		defer cancel()
 
-	// 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
-	// 	defer cancel()
+		if err := server.Stop(ctx); err != nil {
+			Logger.Error("failed to stop http server: " + err.Error())
+		}
+	}()
 
-	// 	if err := server.Stop(ctx); err != nil {
-	// 		logg.Error("failed to stop http server: " + err.Error())
-	// 	}
-	// }()
+	Logger.Info("calendar is running...")
 
-	// logg.Info("calendar is running...")
-
-	// if err := server.Start(ctx); err != nil {
-	// 	logg.Error("failed to start http server: " + err.Error())
-	// 	cancel()
-	// 	os.Exit(1) //nolint:gocritic
-	// }
+	if err := server.Start(ctx); err != nil {
+		Logger.Error("failed to start http server: " + err.Error())
+		os.Exit(1)
+	}
 }

@@ -31,7 +31,6 @@ func TestLogger_New(t *testing.T) {
 		require.FileExists(t, tt.filePath)
 		_ = os.Remove(tt.filePath)
 	}
-
 }
 
 func TestLogger_Logging(t *testing.T) {

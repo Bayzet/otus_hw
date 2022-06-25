@@ -122,9 +122,10 @@ func (s Storage) getEventsByDate(ctx context.Context, begin, end time.Time) ([]s
 
 	query := "SELECT * FROM events e WHERE date BETWEEN ? AND ?"
 	rows, err := s.db.QueryContext(ctx, query, begin, end)
-	if err != nil {
+	if err != nil || rows.Err() != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	var (
 		eid   uuid.UUID

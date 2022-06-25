@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/storage"
 	"github.com/google/uuid"
-
 	"github.com/stretchr/testify/require"
+
+	"github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/storage"
 )
 
 var events = []storage.Event{
@@ -61,7 +61,7 @@ func TestStorage_FindEventById(t *testing.T) {
 		_ = s.CreateEvent(ctx, &e)
 	}
 
-	e := s.FindEventById(ctx, events[3].ID)
+	e := s.FindEventByID(ctx, events[3].ID)
 	require.NotNil(t, e)
 	require.EqualValues(t, &events[3], e)
 }
@@ -74,12 +74,12 @@ func TestStorage_UpdateEvent_success(t *testing.T) {
 	}
 
 	updEvent := events[2]
-	updEvent.Title = "upd"
+	updEvent.Title = "update"
 
 	err := s.UpdateEvent(ctx, &updEvent)
 	require.NoError(t, err)
 
-	e := s.FindEventById(ctx, updEvent.ID)
+	e := s.FindEventByID(ctx, updEvent.ID)
 	require.NotNil(t, e)
 	require.EqualValues(t, &updEvent, e)
 }
@@ -121,7 +121,7 @@ func TestStorage_UpdateEvent_error(t *testing.T) {
 	err := s.UpdateEvent(ctx, &updEvent)
 	require.NoError(t, err)
 
-	e := s.FindEventById(ctx, updEvent.ID)
+	e := s.FindEventByID(ctx, updEvent.ID)
 	require.NotNil(t, e)
 	require.EqualValues(t, &updEvent, e)
 }
@@ -136,7 +136,7 @@ func TestStorage_DeleteEvent(t *testing.T) {
 	err := s.DeleteEvent(ctx, events[0].ID)
 	require.NoError(t, err)
 
-	e := s.FindEventById(ctx, events[0].ID)
+	e := s.FindEventByID(ctx, events[0].ID)
 	require.Nil(t, e)
 
 	require.Equal(t, 10, s.countRows())

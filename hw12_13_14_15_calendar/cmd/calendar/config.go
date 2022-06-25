@@ -3,7 +3,7 @@ package main
 type Config struct {
 	Logger  LoggerConf  `yaml:"logger"`
 	Storage StorageConf `yaml:"storage"`
-	Http    HttpConfig  `yaml:"http"`
+	HTTP    HTTPConfig  `yaml:"http"`
 }
 
 type LoggerConf struct {
@@ -17,7 +17,7 @@ type StorageConf struct {
 	DSN    string `yaml:"dsn"`
 }
 
-type HttpConfig struct {
+type HTTPConfig struct {
 	Host string `yaml:"host"`
 	Port string `yaml:"port"`
 }
