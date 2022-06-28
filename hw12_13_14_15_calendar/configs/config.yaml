@@ -5,8 +5,8 @@ logger:
 
 storage:
   type: memory
-  driver: mysql
-  dsn: root:YLmcjlpD3b96Bi08KPrf@tcp(127.0.0.1:3306)/calendar
+  driver: pgx
+  dsn: "postgres://postgres:postgres@localhost:5432/calendar"
 
 http:
   host: localhost

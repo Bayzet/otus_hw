@@ -37,7 +37,7 @@ func New(level, file string) (*Logger, error) {
 		return nil, errors.Wrap(err, fmt.Sprintf("Переданный уровень логирования %v", level))
 	}
 
-	f, err := os.OpenFile(file, os.O_WRONLY|os.O_CREATE, 0666)
+	f, err := os.OpenFile(file, os.O_WRONLY|os.O_CREATE, 0o666)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("Не удалось обработать файл %v", file))
 	}

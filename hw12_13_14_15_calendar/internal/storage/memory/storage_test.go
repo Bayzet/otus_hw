@@ -8,13 +8,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/storage/models"
+
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 
 	"github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/storage"
 )
 
-var events = []storage.Event{
+var events = []models.Event{
 	{ID: uuid.New(), Title: "event 1", Date: time.Date(2022, 5, 30, 1, 0, 0, 0, time.UTC), User: 1},
 	{ID: uuid.New(), Title: "event 1.1", Date: time.Date(2022, 5, 30, 1, 1, 0, 0, time.UTC), User: 1},
 	{ID: uuid.New(), Title: "event 2", Date: time.Date(2022, 5, 31, 1, 1, 0, 0, time.UTC), User: 1},
@@ -145,7 +147,7 @@ func TestStorage_DeleteEvent(t *testing.T) {
 func TestStorage_ListEventsForDay(t *testing.T) {
 	tests := []struct {
 		in  time.Time
-		exp []storage.Event
+		exp []models.Event
 	}{
 		{
 			in:  time.Date(2022, 5, 30, 1, 0, 0, 0, time.UTC),
@@ -153,7 +155,7 @@ func TestStorage_ListEventsForDay(t *testing.T) {
 		},
 		{
 			in:  time.Date(2022, 5, 31, 1, 0, 0, 0, time.UTC),
-			exp: []storage.Event{events[2]},
+			exp: []models.Event{events[2]},
 		},
 		{
 			in:  time.Date(2022, 5, 29, 1, 0, 0, 0, time.UTC),
@@ -179,7 +181,7 @@ func TestStorage_ListEventsForDay(t *testing.T) {
 func TestStorage_ListEventsForWeek(t *testing.T) {
 	tests := []struct {
 		in     time.Time
-		exp    []storage.Event
+		exp    []models.Event
 		expErr error
 	}{
 		{
@@ -217,7 +219,7 @@ func TestStorage_ListEventsForWeek(t *testing.T) {
 func TestStorage_ListEventsForMonth(t *testing.T) {
 	tests := []struct {
 		in  time.Time
-		exp []storage.Event
+		exp []models.Event
 	}{
 		{
 			in:  time.Date(2022, 5, 30, 1, 0, 0, 0, time.UTC),

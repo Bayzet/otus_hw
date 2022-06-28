@@ -1,7 +1,13 @@
 logger:
   level: "debug"
   file: "log.txt"
-db:
-  mysql_dsn: root:123456@tcp(127.0.0.1:3306)/calendar
+
+
 storage:
-  type: memory|sql
+  type: memory
+  driver: pgx
+  dsn: "postgres://postgres:postgres@localhost:5432/calendar"
+
+http:
+  host: localhost
+  port: 1111

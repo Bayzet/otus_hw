@@ -14,8 +14,5 @@ test:
 lint:
 	golangci-lint run ./...
 
-migrate-up:
-	mysql -u $(DB_USER) -p $(DB_PASS) calendar < migrations/first_06122022.up.sql
-
-migrate-down:
-	mysql -u $(DB_USER) -p $(DB_PASS) calendar < migrations/first_06122022.down.sql
+migrate:
+	go run ./migrations --config=./configs/config.yaml

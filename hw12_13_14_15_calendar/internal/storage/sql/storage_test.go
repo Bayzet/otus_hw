@@ -8,14 +8,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/storage/models"
+
 	"github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/storage"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 
-	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/jackc/pgx/stdlib"
 )
 
-var eventsFixture = []storage.Event{
+var eventsFixture = []models.Event{
 	{ID: uuid.New(), Title: "event 1", Date: time.Date(2022, 5, 30, 1, 0, 0, 0, time.UTC), User: 1},
 	{ID: uuid.New(), Title: "event 1.1", Date: time.Date(2022, 5, 30, 1, 1, 0, 0, time.UTC), User: 1},
 	{ID: uuid.New(), Title: "event 2", Date: time.Date(2022, 5, 31, 1, 1, 0, 0, time.UTC), User: 1},
@@ -30,7 +32,7 @@ var eventsFixture = []storage.Event{
 }
 
 func initDB() *sql.DB {
-	db, err := sql.Open("mysql", "root:YLmcjlpD3b96Bi08KPrf@tcp(localhost:3306)/calendar")
+	db, err := sql.Open("pgx", "postgres://postgres:postgres@localhost:5432/calendar")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -50,18 +52,14 @@ func initDB() *sql.DB {
 		log.Fatal(err)
 	}
 
-	stmt, _ := db.Prepare("INSERT INTO events(`id`, `title`, `date`, user_id) values(?, ?, ?, ?)")
-	defer func(stmt *sql.Stmt) {
-		err := stmt.Close()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}(stmt)
+	stmt, _ := db.Prepare(`INSERT INTO events(id, title, date, user_id)
+		values($1, $2, $3, $4)`)
+	defer stmt.Close()
 
 	for _, e := range eventsFixture {
 		_, err := stmt.Exec(e.ID, e.Title, e.Date, e.User)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal(err) // nolint:gocritic
 		}
 	}
 
@@ -73,7 +71,7 @@ func TestStorage_CreateEvent(t *testing.T) {
 
 	s := New(initDB())
 
-	event := storage.Event{
+	event := models.Event{
 		ID:    uuid.New(),
 		Title: "Test event 1",
 		Date:  time.Date(2022, 0o5, 10, 10, 0, 0, 0, time.UTC),
@@ -83,7 +81,7 @@ func TestStorage_CreateEvent(t *testing.T) {
 	err := s.CreateEvent(ctx, &event)
 	require.NoError(t, err)
 
-	row := s.db.QueryRowContext(ctx, "SELECT id FROM events WHERE id = ?", event.ID)
+	row := s.db.QueryRowContext(ctx, "SELECT id FROM events WHERE id = $1", event.ID)
 
 	var id uuid.UUID
 	_ = row.Scan(&id)
@@ -101,7 +99,7 @@ func TestStorage_UpdateEvent(t *testing.T) {
 	err := s.UpdateEvent(ctx, &updEvent)
 	require.NoError(t, err)
 
-	row := s.db.QueryRowContext(ctx, "SELECT id, title FROM events WHERE id = ?", updEvent.ID)
+	row := s.db.QueryRowContext(ctx, "SELECT id, title FROM events WHERE id = $1", updEvent.ID)
 	var id uuid.UUID
 	var title string
 
@@ -118,7 +116,7 @@ func TestStorage_DeleteEvent(t *testing.T) {
 	err := s.DeleteEvent(ctx, &eventsFixture[0])
 	require.NoError(t, err)
 
-	row := s.db.QueryRowContext(ctx, "SELECT id FROM events WHERE id = ?", eventsFixture[0].ID)
+	row := s.db.QueryRowContext(ctx, "SELECT id FROM events WHERE id = $1", eventsFixture[0].ID)
 	var id *uuid.UUID
 	_ = row.Scan(id)
 	require.Nil(t, id)
@@ -127,7 +125,7 @@ func TestStorage_DeleteEvent(t *testing.T) {
 func TestStorage_FindEventById(t *testing.T) {
 	tests := []struct {
 		in  uuid.UUID
-		exp *storage.Event
+		exp *models.Event
 	}{
 		{
 			eventsFixture[2].ID,
@@ -156,7 +154,7 @@ func TestStorage_ListEventsForDay(t *testing.T) {
 
 	tests := []struct {
 		in  time.Time
-		exp []storage.Event
+		exp []models.Event
 	}{
 		{
 			in:  time.Date(2022, 5, 30, 1, 0, 0, 0, time.UTC),
@@ -164,7 +162,7 @@ func TestStorage_ListEventsForDay(t *testing.T) {
 		},
 		{
 			in:  time.Date(2022, 5, 31, 1, 0, 0, 0, time.UTC),
-			exp: []storage.Event{eventsFixture[2]},
+			exp: []models.Event{eventsFixture[2]},
 		},
 		{
 			in:  time.Date(2022, 5, 29, 1, 0, 0, 0, time.UTC),
@@ -188,7 +186,7 @@ func TestStorage_ListEventsForWeek(t *testing.T) {
 
 	tests := []struct {
 		in     time.Time
-		exp    []storage.Event
+		exp    []models.Event
 		expErr error
 	}{
 		{
@@ -224,7 +222,7 @@ func TestStorage_ListEventsForMonth(t *testing.T) {
 
 	tests := []struct {
 		in  time.Time
-		exp []storage.Event
+		exp []models.Event
 	}{
 		{
 			in:  time.Date(2022, 5, 30, 1, 0, 0, 0, time.UTC),
