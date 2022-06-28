@@ -2,32 +2,47 @@ package internalhttp
 
 import (
 	"context"
-	"log"
+	"io"
 	"net/http"
+	"os"
 )
 
 type Server struct {
-	addr string
-	mux  *http.ServeMux
+	Host string
+	Port string
 }
 
-func NewServer(addr string, mux *http.ServeMux) *Server {
+type Application interface { // TODO
+}
+
+type Logger interface {
+	Info(string)
+	Warn(string)
+	Error(string)
+	Debug(string)
+}
+
+func helloHandler(res http.ResponseWriter, req *http.Request) {
+	io.WriteString(res, "Hello world!")
+}
+
+func NewServer(host, port string, logger Logger, app Application) *Server {
+	http.Handle("/", loggingMiddleware(logger, http.HandlerFunc(helloHandler)))
+
 	return &Server{
-		addr: addr,
-		mux:  mux,
+		Host: host,
+		Port: port,
 	}
 }
 
 func (s *Server) Start(ctx context.Context) error {
-	if err := http.ListenAndServe(s.addr, s.mux); err != nil {
-		log.Fatal(err)
-	}
+	http.ListenAndServe(s.Host+":"+s.Port, nil)
 
 	<-ctx.Done()
 	return nil
 }
 
 func (s *Server) Stop(ctx context.Context) error {
-	ctx.Done()
+	os.Exit(1)
 	return nil
 }

@@ -10,16 +10,17 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/storage"
+	"github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/storage/models"
 )
 
 type Storage struct {
 	mu     *sync.Mutex
-	events map[uuid.UUID]storage.Event
+	events map[uuid.UUID]models.Event
 }
 
 func New() *Storage {
 	return &Storage{
-		events: make(map[uuid.UUID]storage.Event),
+		events: make(map[uuid.UUID]models.Event),
 		mu:     &sync.Mutex{},
 	}
 }
@@ -28,7 +29,7 @@ func (s Storage) countRows() int {
 	return len(s.events)
 }
 
-func (s Storage) CreateEvent(ctx context.Context, e *storage.Event) error {
+func (s Storage) CreateEvent(ctx context.Context, e *models.Event) error {
 	s.mu.Lock()
 	s.events[e.ID] = *e
 	s.mu.Unlock()
@@ -36,7 +37,7 @@ func (s Storage) CreateEvent(ctx context.Context, e *storage.Event) error {
 	return nil
 }
 
-func (s Storage) UpdateEvent(ctx context.Context, e *storage.Event) error {
+func (s Storage) UpdateEvent(ctx context.Context, e *models.Event) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -59,7 +60,7 @@ func (s Storage) DeleteEvent(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-func (s Storage) FindEventByID(ctx context.Context, id uuid.UUID) *storage.Event {
+func (s Storage) FindEventByID(ctx context.Context, id uuid.UUID) *models.Event {
 	e, ok := s.events[id]
 	if !ok {
 		return nil
@@ -68,8 +69,8 @@ func (s Storage) FindEventByID(ctx context.Context, id uuid.UUID) *storage.Event
 	return &e
 }
 
-func (s Storage) ListEventsForDay(ctx context.Context, t time.Time) ([]storage.Event, error) {
-	var events []storage.Event
+func (s Storage) ListEventsForDay(ctx context.Context, t time.Time) ([]models.Event, error) {
+	var events []models.Event
 	y, m, d := t.Date()
 
 	for _, e := range s.events {
@@ -82,12 +83,12 @@ func (s Storage) ListEventsForDay(ctx context.Context, t time.Time) ([]storage.E
 	return events, nil
 }
 
-func (s Storage) ListEventsForWeek(ctx context.Context, t time.Time) ([]storage.Event, error) {
+func (s Storage) ListEventsForWeek(ctx context.Context, t time.Time) ([]models.Event, error) {
 	if t.Weekday() != time.Monday {
 		return nil, errors.Wrap(storage.ErrDayNotMonday, fmt.Sprintf("Ошибка, переданный день - %v", t.Weekday()))
 	}
 
-	var events []storage.Event
+	var events []models.Event
 	sevenDayHour, _ := time.ParseDuration("167h59m59s")
 	firstDayOfWeek := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
 	lastDayOfWeek := firstDayOfWeek.Add(sevenDayHour)
@@ -102,8 +103,8 @@ func (s Storage) ListEventsForWeek(ctx context.Context, t time.Time) ([]storage.
 	return events, nil
 }
 
-func (s Storage) ListEventsForMonth(ctx context.Context, t time.Time) ([]storage.Event, error) {
-	var events []storage.Event
+func (s Storage) ListEventsForMonth(ctx context.Context, t time.Time) ([]models.Event, error) {
+	var events []models.Event
 
 	for _, e := range s.events {
 		if e.Date.Month() == t.Month() {

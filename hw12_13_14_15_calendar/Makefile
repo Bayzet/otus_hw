@@ -11,11 +11,11 @@ run: build
 test:
 	go test -race ./internal/...
 
-lint:
+install-lint-deps:
+	(which golangci-lint > /dev/null) || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.41.1
+
+lint: install-lint-deps
 	golangci-lint run ./...
 
-migrate-up:
-	mysql -u $(DB_USER) -p $(DB_PASS) calendar < migrations/first_06122022.up.sql
-
-migrate-down:
-	mysql -u $(DB_USER) -p $(DB_PASS) calendar < migrations/first_06122022.down.sql
+migrate:
+	go run ./migrations --config=./configs/config.yaml

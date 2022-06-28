@@ -6,34 +6,25 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/storage"
+	"github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/storage/models"
 )
 
 type App struct {
-	Logger  Logger
 	Storage Storage
 }
 
-type Logger interface {
-	Info(string)
-	Warn(string)
-	Error(string)
-	Debug(string)
-}
-
 type Storage interface {
-	CreateEvent(context.Context, *storage.Event) error
-	UpdateEvent(context.Context, *storage.Event) error
+	CreateEvent(context.Context, *models.Event) error
+	UpdateEvent(context.Context, *models.Event) error
 	DeleteEvent(context.Context, uuid.UUID) error
-	ListEventsForDay(context.Context, time.Time) ([]storage.Event, error)
-	ListEventsForWeek(context.Context, time.Time) ([]storage.Event, error)
-	ListEventsForMonth(context.Context, time.Time) ([]storage.Event, error)
-	FindEventByID(ctx context.Context, uuid uuid.UUID) *storage.Event
+	ListEventsForDay(context.Context, time.Time) ([]models.Event, error)
+	ListEventsForWeek(context.Context, time.Time) ([]models.Event, error)
+	ListEventsForMonth(context.Context, time.Time) ([]models.Event, error)
+	FindEventByID(ctx context.Context, uuid uuid.UUID) *models.Event
 }
 
-func New(logger Logger, storage Storage) *App {
+func New(storage Storage) *App {
 	return &App{
-		Logger:  logger,
 		Storage: storage,
 	}
 }
