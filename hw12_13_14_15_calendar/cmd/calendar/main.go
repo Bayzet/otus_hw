@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/spf13/pflag"
-	"gopkg.in/yaml.v3"
+	yaml "gopkg.in/yaml.v3"
 
 	"github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/app"
 	"github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/consts"

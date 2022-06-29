@@ -7,9 +7,9 @@ import (
 	"io/ioutil"
 
 	_ "github.com/jackc/pgx/stdlib"
-	"github.com/pressly/goose/v3"
+	goose "github.com/pressly/goose/v3"
 	"github.com/spf13/pflag"
-	"gopkg.in/yaml.v3"
+	yaml "gopkg.in/yaml.v3"
 )
 
 //go:embed *.sql
@@ -58,6 +58,4 @@ func main() {
 	if err := goose.Up(db, "."); err != nil {
 		panic(err)
 	}
-
-	// run app
 }
