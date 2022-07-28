@@ -1,20 +1,23 @@
 package main
 
-// При желании конфигурацию можно вынести в internal/config.
-// Организация конфига в main принуждает нас сужать API компонентов, использовать
-// при их конструировании только необходимые параметры, а также уменьшает вероятность циклической зависимости.
 type Config struct {
-	Logger LoggerConf
-	// TODO
+	Logger  LoggerConf  `yaml:"logger"`
+	Storage StorageConf `yaml:"storage"`
+	HTTP    HTTPConfig  `yaml:"http"`
 }
 
 type LoggerConf struct {
-	Level string
-	// TODO
+	Level string `yaml:"level"`
+	File  string `yaml:"file"`
 }
 
-func NewConfig() Config {
-	return Config{}
+type StorageConf struct {
+	Type   string `yaml:"type"`
+	Driver string `yaml:"driver"`
+	DSN    string `yaml:"dsn"`
 }
 
-// TODO
+type HTTPConfig struct {
+	Host string `yaml:"host"`
+	Port string `yaml:"port"`
+}

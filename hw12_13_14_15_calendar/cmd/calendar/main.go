@@ -3,59 +3,88 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
+	"io/ioutil"
 	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
-	"github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/app"
-	"github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/logger"
-	internalhttp "github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/server/http"
-	memorystorage "github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/storage/memory"
+	"github.com/spf13/pflag"
+	yaml "gopkg.in/yaml.v3"
+
+	"github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/app"
+	"github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/consts"
+	"github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/logger"
+	internalhttp "github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/server/http"
+	memorystorage "github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/storage/memory"
 )
 
-var configFile string
+var (
+	configFile string
+	Logger     *logger.Logger
+)
+
+type StorageType string
+
+func (st StorageType) Validate() error {
+	switch st {
+	case consts.StorageTypeSQL, consts.StorageTypeMemory:
+		return nil
+	default:
+		return logger.ErrStorageTypeNotValid
+	}
+}
 
 func init() {
-	flag.StringVar(&configFile, "config", "/etc/calendar/config.toml", "Path to configuration file")
+	pflag.StringVar(&configFile, "config", "/calendar/config.yaml", "Path to configuration file")
 }
 
 func main() {
-	flag.Parse()
+	pflag.Parse()
 
 	if flag.Arg(0) == "version" {
 		printVersion()
 		return
 	}
 
-	config := NewConfig()
-	logg := logger.New(config.Logger.Level)
+	var config Config
 
+	b, err := ioutil.ReadFile(configFile)
+	if err != nil {
+		fmt.Printf("Ошибка чтения файла: %v", err.Error())
+		return
+	}
+
+	err = yaml.Unmarshal(b, &config)
+	if err != nil {
+		fmt.Printf("Ошибка маршелинга: %v", err.Error())
+		return
+	}
+
+	Logger, err = logger.New(config.Logger.Level, config.Logger.File)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 	storage := memorystorage.New()
-	calendar := app.New(logg, storage)
+	calendar := app.New(storage)
 
-	server := internalhttp.NewServer(logg, calendar)
+	server := internalhttp.NewServer(config.HTTP.Host, config.HTTP.Port, Logger, calendar)
 
-	ctx, cancel := signal.NotifyContext(context.Background(),
-		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	defer cancel()
-
+	ctx := context.Background()
 	go func() {
 		<-ctx.Done()
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+		ctx, cancel := context.WithTimeout(ctx, time.Second*3)
 		defer cancel()
 
 		if err := server.Stop(ctx); err != nil {
-			logg.Error("failed to stop http server: " + err.Error())
+			Logger.Error("failed to stop http server: " + err.Error())
 		}
 	}()
 
-	logg.Info("calendar is running...")
+	Logger.Info("calendar is running...")
 
 	if err := server.Start(ctx); err != nil {
-		logg.Error("failed to start http server: " + err.Error())
-		cancel()
-		os.Exit(1) //nolint:gocritic
+		Logger.Error("failed to start http server: " + err.Error())
+		os.Exit(1)
 	}
 }

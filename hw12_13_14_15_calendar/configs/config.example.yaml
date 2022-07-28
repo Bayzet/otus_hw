@@ -1,0 +1,13 @@
+logger:
+  level: "debug"
+  file: "log.txt"
+
+
+storage:
+  type: memory # sql
+  driver: pgx
+  dsn: "postgres://postgres:postgres@localhost:5432/calendar"
+
+http:
+  host: localhost
+  port: 1111
