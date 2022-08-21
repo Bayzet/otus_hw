@@ -19,3 +19,10 @@ lint: install-lint-deps
 
 migrate:
 	go run ./migrations --config=./configs/config.yaml
+
+generate:
+	go generate ./...
+	protoc ./proto/calendar.proto --go_out=./internal/gen/pb --go-grpc_out=./internal/gen/pb
+
+evans:
+	evans --proto ./proto/calendar.proto repl

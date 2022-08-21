@@ -2,47 +2,49 @@ package internalhttp
 
 import (
 	"context"
-	"io"
+	"log"
 	"net/http"
-	"os"
+
+	"github.com/pkg/errors"
+
+	"github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/logger"
 )
 
 type Server struct {
-	Host string
-	Port string
+	addr   string
+	server *http.Server
 }
 
-type Application interface { // TODO
-}
-
-type Logger interface {
-	Info(string)
-	Warn(string)
-	Error(string)
-	Debug(string)
-}
-
-func helloHandler(res http.ResponseWriter, req *http.Request) {
-	io.WriteString(res, "Hello world!")
-}
-
-func NewServer(host, port string, logger Logger, app Application) *Server {
-	http.Handle("/", loggingMiddleware(logger, http.HandlerFunc(helloHandler)))
+func NewServer(router http.Handler, host, port string, logger logger.Logger) *Server {
+	addr := host + ":" + port
 
 	return &Server{
-		Host: host,
-		Port: port,
+		addr: addr,
+		server: &http.Server{
+			Addr:    addr,
+			Handler: loggingMiddleware(logger, router),
+		},
 	}
 }
 
 func (s *Server) Start(ctx context.Context) error {
-	http.ListenAndServe(s.Host+":"+s.Port, nil)
+	log.Printf("starting HTTP server on %s", s.addr)
+
+	err := s.server.ListenAndServe()
+	if err != nil {
+		return errors.Wrap(err, "Ошибка старта HTTP сервера")
+	}
 
 	<-ctx.Done()
 	return nil
 }
 
 func (s *Server) Stop(ctx context.Context) error {
-	os.Exit(1)
+	log.Printf("stopping HTTP server on %s", s.addr)
+
+	if err := s.server.Close(); err != nil {
+		return errors.Wrap(err, "Ошибка остановки HTTP сервера")
+	}
+
 	return nil
 }

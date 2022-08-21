@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package calendar.v1;
+
+option go_package ="./calendarpb";
+
+service Calendar {
+  rpc CreateEvent(CreateEventRequest) returns (SuccessOrErrorResponse);
+  rpc UpdateEvent(UpdateEventRequest) returns (SuccessOrErrorResponse);
+  rpc DeleteEvent(DeleteEventRequest) returns (SuccessOrErrorResponse);
+  rpc ListEventsForDay(ListEventsForDayRequest) returns (Events);
+  rpc ListEventsForWeek(ListEventsForWeekRequest) returns (Events);
+  rpc ListEventsForMonth(ListEventsForMonthRequest) returns (Events);
+  rpc FindEventByID(FindEventByIDRequest) returns (Event);
+}
+
+message DateTime {
+  int32 Year = 1;
+  int32 Month = 2;
+  int32 Day = 3;
+  int32 Hour = 4;
+  int32 Minute = 5;
+}
+
+message Event {
+  string id = 1;
+  string title = 2;
+  DateTime date = 3;
+  int64 user_id = 4;
+}
+
+message Events {
+  repeated Event events = 1;
+}
+
+message SuccessOrErrorResponse {
+    string id = 1;
+    bool success = 2;
+    string error = 3;
+}
+
+message CreateEventRequest {
+    Event event = 1;
+}
+
+message UpdateEventRequest {
+    Event event = 1;
+}
+
+message DeleteEventRequest {
+    string id = 1;
+}
+
+message ListEventsForDayRequest {
+  DateTime date = 1;
+}
+
+message ListEventsForWeekRequest {
+  DateTime date = 1;
+}
+
+message ListEventsForMonthRequest {
+  DateTime date = 1;
+}
+
+message FindEventByIDRequest {
+  string id = 1;
+}

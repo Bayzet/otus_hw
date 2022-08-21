@@ -1,17 +1,18 @@
+//nolint:varnamelen
 package sqlstorage
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"time"
 
-	"github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/storage/models"
-
+	"github.com/google/uuid"
+	_ "github.com/jackc/pgx/stdlib" //nolint:golint
 	"github.com/pkg/errors"
 
-	"github.com/google/uuid"
-
+	"github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/models"
 	"github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/storage"
 )
 
@@ -19,7 +20,17 @@ type Storage struct {
 	db *sql.DB
 }
 
-func New(db *sql.DB) *Storage {
+func New(driver, dsn string) *Storage {
+	db, err := sql.Open(driver, dsn)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = db.PingContext(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	return &Storage{
 		db: db,
 	}
@@ -30,7 +41,7 @@ func (s Storage) CreateEvent(ctx context.Context, e *models.Event) error {
 
 	_, err := s.db.ExecContext(ctx, query, e.ID, e.Title, e.Date, e.User)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Ошибка CreateEvent")
 	}
 
 	return nil
@@ -41,18 +52,18 @@ func (s Storage) UpdateEvent(ctx context.Context, e *models.Event) error {
 
 	_, err := s.db.ExecContext(ctx, query, e.Title, e.Date, e.ID)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Ошибка UpdateEvent")
 	}
 
 	return nil
 }
 
-func (s Storage) DeleteEvent(ctx context.Context, e *models.Event) error {
+func (s Storage) DeleteEvent(ctx context.Context, id uuid.UUID) error {
 	query := "DELETE FROM events WHERE id = $1"
 
-	_, err := s.db.ExecContext(ctx, query, e.ID)
+	_, err := s.db.ExecContext(ctx, query, id)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Ошибка DeleteEvent")
 	}
 
 	return nil
@@ -119,7 +130,7 @@ func (s Storage) getEventsByDate(ctx context.Context, begin, end time.Time) ([]m
 	query := "SELECT * FROM events e WHERE e.date BETWEEN $1 AND $2"
 	rows, err := s.db.QueryContext(ctx, query, begin, end)
 	if err != nil || rows.Err() != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Ошибка QueryContext в getEventsByDate")
 	}
 	defer rows.Close()
 
@@ -133,7 +144,7 @@ func (s Storage) getEventsByDate(ctx context.Context, begin, end time.Time) ([]m
 	for rows.Next() {
 		err := rows.Scan(&eid, &title, &date, &user)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "Ошибка scan в getEventsByDate")
 		}
 
 		e = append(e, models.Event{

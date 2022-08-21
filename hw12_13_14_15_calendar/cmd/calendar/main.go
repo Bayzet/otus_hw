@@ -1,3 +1,4 @@
+//nolint:varnamelen
 package main
 
 import (
@@ -6,7 +7,15 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
+
+	"github.com/gorilla/mux"
+
+	sqlstorage "github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/storage/sql"
+
+	"github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/server/grpc"
 
 	"github.com/spf13/pflag"
 	yaml "gopkg.in/yaml.v3"
@@ -18,10 +27,7 @@ import (
 	memorystorage "github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/storage/memory"
 )
 
-var (
-	configFile string
-	Logger     *logger.Logger
-)
+var configFile string
 
 type StorageType string
 
@@ -38,6 +44,7 @@ func init() {
 	pflag.StringVar(&configFile, "config", "/calendar/config.yaml", "Path to configuration file")
 }
 
+//nolint:funlen
 func main() {
 	pflag.Parse()
 
@@ -47,7 +54,6 @@ func main() {
 	}
 
 	var config Config
-
 	b, err := ioutil.ReadFile(configFile)
 	if err != nil {
 		fmt.Printf("Ошибка чтения файла: %v", err.Error())
@@ -60,14 +66,26 @@ func main() {
 		return
 	}
 
-	Logger, err = logger.New(config.Logger.Level, config.Logger.File)
+	Logger, err := logger.New(config.Logger.Level, config.Logger.File)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-	storage := memorystorage.New()
-	calendar := app.New(storage)
 
-	server := internalhttp.NewServer(config.HTTP.Host, config.HTTP.Port, Logger, calendar)
+	var storage app.Repository
+	if config.Storage.Type == consts.StorageTypeMemory {
+		storage = memorystorage.New()
+	} else {
+		storage = sqlstorage.New(config.Storage.Driver, config.Storage.DSN)
+	}
+
+	calendar := app.New(storage)
+	router := mux.NewRouter()
+
+	httpServer := internalhttp.NewServer(router, config.HTTP.Host, config.HTTP.Port, Logger)
+	calendarAPI := internalhttp.CalendarApp{App: calendar}
+	calendarAPI.RegisterHTTPHandlers(router)
+
+	grpcServer := grpc.NewServer(calendar, config.GRPC.Host, config.GRPC.Port, Logger)
 
 	ctx := context.Background()
 	go func() {
@@ -76,15 +94,31 @@ func main() {
 		ctx, cancel := context.WithTimeout(ctx, time.Second*3)
 		defer cancel()
 
-		if err := server.Stop(ctx); err != nil {
-			Logger.Error("failed to stop http server: " + err.Error())
+		if err := httpServer.Stop(ctx); err != nil {
+			Logger.Error("failed to stop http httpServer: " + err.Error())
 		}
 	}()
 
-	Logger.Info("calendar is running...")
+	go func() {
+		if err := httpServer.Start(ctx); err != nil {
+			Logger.Error("failed to start http server: " + err.Error())
+			os.Exit(1)
+		}
+	}()
 
-	if err := server.Start(ctx); err != nil {
-		Logger.Error("failed to start http server: " + err.Error())
+	go func() {
+		if err := grpcServer.Run(ctx); err != nil {
+			Logger.Error("failed to start gRPC server: " + err.Error())
+			os.Exit(1)
+		}
+	}()
+	sChan := make(chan os.Signal, 1)
+	signal.Notify(sChan, syscall.SIGINT, syscall.SIGHUP)
+
+	for range sChan {
+		grpcServer.Stop(ctx)
+		_ = httpServer.Stop(ctx)
+
 		os.Exit(1)
 	}
 }

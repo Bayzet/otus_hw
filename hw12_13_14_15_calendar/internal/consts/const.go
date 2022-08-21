@@ -11,6 +11,7 @@ const (
 )
 
 const (
-	StartRequestTime int = iota
-	ResponseStatusCode
+	TypeListEventByDay   = "day"
+	TypeListEventByWeek  = "week"
+	TypeListEventByMonth = "month"
 )

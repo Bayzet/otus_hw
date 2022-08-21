@@ -11,3 +11,7 @@ storage:
 http:
   host: localhost
   port: 1111
+
+grpc:
+  host: localhost
+  port: 50051

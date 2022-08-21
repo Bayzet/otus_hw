@@ -4,6 +4,7 @@ type Config struct {
 	Logger  LoggerConf  `yaml:"logger"`
 	Storage StorageConf `yaml:"storage"`
 	HTTP    HTTPConfig  `yaml:"http"`
+	GRPC    GRPCConfig  `yaml:"grpc"`
 }
 
 type LoggerConf struct {
@@ -18,6 +19,11 @@ type StorageConf struct {
 }
 
 type HTTPConfig struct {
+	Host string `yaml:"host"`
+	Port string `yaml:"port"`
+}
+
+type GRPCConfig struct {
 	Host string `yaml:"host"`
 	Port string `yaml:"port"`
 }
