@@ -4,6 +4,10 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/logger"
+
+	"github.com/pkg/errors"
 )
 
 type respStatusWriter struct {
@@ -23,24 +27,24 @@ func (w *respStatusWriter) Write(b []byte) (int, error) {
 	}
 	n, err := w.ResponseWriter.Write(b)
 	w.length += n
-	return n, err
+	return n, errors.Wrap(err, "Ошибка записи response")
 }
 
-func loggingMiddleware(logger Logger, next http.HandlerFunc) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func loggingMiddleware(logger logger.Logger, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		writer := respStatusWriter{ResponseWriter: w}
 		startRequest := time.Now()
-		next.ServeHTTP(&writer, r)
+		next.ServeHTTP(&writer, req)
 		msg := fmt.Sprintf("%v [%v] %v %v %v %v %v %v %v",
-			r.RemoteAddr,
+			req.RemoteAddr,
 			startRequest.Format(time.RFC822Z),
-			r.Method,
-			r.RequestURI,
-			r.Proto,
+			req.Method,
+			req.RequestURI,
+			req.Proto,
 			writer.status,
 			writer.length,
 			time.Since(startRequest),
-			r.Header.Get("User-Agent"),
+			req.Header.Get("User-Agent"),
 		)
 		logger.Info(msg)
 	})

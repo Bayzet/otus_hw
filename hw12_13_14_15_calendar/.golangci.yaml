@@ -13,3 +13,12 @@ linters:
     - lll
     - nakedret
     - wsl
+    - nlreturn
+    - exhaustivestruct
+    - errcheck
+    - forbidigo
+    - nolintlint
+    - maligned
+    - golint
+    - interfacer
+    - scopelint

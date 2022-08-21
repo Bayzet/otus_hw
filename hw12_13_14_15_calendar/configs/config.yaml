@@ -4,10 +4,14 @@ logger:
 
 
 storage:
-  type: memory
+  type: sql
   driver: pgx
   dsn: "postgres://postgres:postgres@localhost:5432/calendar"
 
 http:
-  host: localhost
+  host: 127.0.0.1
   port: 1111
+
+grpc:
+  host: 127.0.0.1
+  port: 50051

@@ -9,8 +9,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
+	"github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/models"
 	"github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/storage"
-	"github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/storage/models"
 )
 
 type Storage struct {
@@ -25,10 +25,6 @@ func New() *Storage {
 	}
 }
 
-func (s Storage) countRows() int {
-	return len(s.events)
-}
-
 func (s Storage) CreateEvent(ctx context.Context, e *models.Event) error {
 	s.mu.Lock()
 	s.events[e.ID] = *e
@@ -37,15 +33,15 @@ func (s Storage) CreateEvent(ctx context.Context, e *models.Event) error {
 	return nil
 }
 
-func (s Storage) UpdateEvent(ctx context.Context, e *models.Event) error {
+func (s Storage) UpdateEvent(ctx context.Context, event *models.Event) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, ok := s.events[e.ID]; !ok {
-		return errors.Wrap(storage.ErrEventNotFound, fmt.Sprintf("Ошибка обновления события %v", e.ID))
+	if _, ok := s.events[event.ID]; !ok {
+		return errors.Wrap(storage.ErrEventNotFound, fmt.Sprintf("Ошибка обновления события %v", event.ID))
 	}
 
-	s.events[e.ID] = *e
+	s.events[event.ID] = *event
 
 	return nil
 }
@@ -83,14 +79,14 @@ func (s Storage) ListEventsForDay(ctx context.Context, t time.Time) ([]models.Ev
 	return events, nil
 }
 
-func (s Storage) ListEventsForWeek(ctx context.Context, t time.Time) ([]models.Event, error) {
-	if t.Weekday() != time.Monday {
-		return nil, errors.Wrap(storage.ErrDayNotMonday, fmt.Sprintf("Ошибка, переданный день - %v", t.Weekday()))
+func (s Storage) ListEventsForWeek(ctx context.Context, date time.Time) ([]models.Event, error) {
+	if date.Weekday() != time.Monday {
+		return nil, errors.Wrap(storage.ErrDayNotMonday, fmt.Sprintf("Ошибка, переданный день - %v", date.Weekday()))
 	}
 
 	var events []models.Event
 	sevenDayHour, _ := time.ParseDuration("167h59m59s")
-	firstDayOfWeek := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
+	firstDayOfWeek := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.UTC)
 	lastDayOfWeek := firstDayOfWeek.Add(sevenDayHour)
 
 	for _, e := range s.events {

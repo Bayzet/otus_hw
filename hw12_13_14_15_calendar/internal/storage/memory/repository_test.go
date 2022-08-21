@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/storage/models"
+	"github.com/Bayzet/otus_hw/hw12_13_14_15_calendar/internal/models"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -35,11 +35,11 @@ func TestStorage_CreateEvent(t *testing.T) {
 
 	err := s.CreateEvent(context.Background(), &events[0])
 	require.NoError(t, err)
-	require.Equal(t, 1, s.countRows())
+	require.Equal(t, 1, len(s.events))
 
 	err = s.CreateEvent(context.Background(), &events[1])
 	require.NoError(t, err)
-	require.Equal(t, 2, s.countRows())
+	require.Equal(t, 2, len(s.events))
 }
 
 func TestStorage_CreateEvent_race(t *testing.T) {
@@ -141,7 +141,7 @@ func TestStorage_DeleteEvent(t *testing.T) {
 	e := s.FindEventByID(ctx, events[0].ID)
 	require.Nil(t, e)
 
-	require.Equal(t, 10, s.countRows())
+	require.Equal(t, 10, len(s.events))
 }
 
 func TestStorage_ListEventsForDay(t *testing.T) {
